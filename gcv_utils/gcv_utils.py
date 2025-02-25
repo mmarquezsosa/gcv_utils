@@ -690,3 +690,36 @@ def plot_vtkpolydata(polydata: vtk.vtkPolyData, polydata_name: str = "Object",
         plt.show()
     else:
         plt.close()
+
+def is_polydata_valid(polydata: vtk.vtkPolyData) -> bool:
+    """
+    Verify that a VTK polydata object is valid.
+    
+    A valid polydata must:
+      - Not be None.
+      - Have a non-empty points array.
+      - Have at least one cell.
+      - Contain no NaN values in its point coordinates.
+      
+    Returns:
+        True if the polydata is valid, False otherwise.
+    """
+    # Check if the polydata object exists.
+    if polydata is None:
+        return False
+
+    # Check if polydata has points.
+    points = polydata.GetPoints()
+    if points is None or points.GetNumberOfPoints() == 0:
+        return False
+
+    # Check if polydata has cells.
+    if polydata.GetNumberOfCells() == 0:
+        return False
+
+    # Convert the VTK point data to a NumPy array for an efficient NaN check.
+    point_array = numpy_support.vtk_to_numpy(points.GetData())
+    if np.isnan(point_array).any():
+        return False
+
+    return True

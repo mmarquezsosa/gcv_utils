@@ -129,6 +129,9 @@ Applies Marching Cubes to extract a surface from VTK ImageData.
 - ```plot_vtkpolydata(polydata: vtk.vtkPolyData, polydata_name: str = "Object", display: bool = False, save: bool = False, output_dir = None, scale: bool = False) -> None```
 Plots a VTK PolyData object in 3D.
 
+- ```is_polydata_valid(polydata: vtk.vtkPolyData) -> bool```
+Verifies that a VTK polydata object is valid.
+
 ## Dependencies
 - NumPy: Array computations.
 - SimpleITK: Medical image processing.
