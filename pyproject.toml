@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gcv_utils"
+version = "0.1.0"
+dependencies = ["numpy", "SimpleITK", "vtk", "matplotlib"]
+authors = [{ name = "Maria Marquez-Sosa", email = "mechemarquezsosa@gmail.com" }]
+description = "A utility package for GCV operations"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { text = "MIT" }
