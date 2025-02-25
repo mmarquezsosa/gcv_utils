@@ -34,7 +34,13 @@
   - Apply **Marching Cubes** to extract a surface from **VTK image data**.
   - Visualize **VTK PolyData** using Matplotlib.
 
-## Usage
+## Installation & Usage
+
+Open your terminal, navigate to the root folder (`gcv_utils`), and run:
+
+```
+pip install .
+```
 
 You can run the gcv_utils.py script (or import its functions). For example:
 
