@@ -4,6 +4,7 @@ import SimpleITK as sitk
 import matplotlib.pyplot as plt
 from vtk.util import numpy_support
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+from scipy.spatial import cKDTree
 
 ############################ SITK IMAGES ############################
 
@@ -741,3 +742,27 @@ def decimate_vtkpolydata(polydata: vtk.vtkPolyData, decimation_factor: float) ->
     
     except Exception as e:
         print(f"Error decimating polydata: {e}")
+
+def calculate_chamfer_distance_between_vtkpolydata(polydata1: vtk.vtkPolyData, polydata2: vtk.vtkPolyData) -> float:
+    """
+    Calculate the Chamfer loss between 2 vtkPolyData objects.
+    """
+    # Convert VTK point data to NumPy arrays
+    points1 = numpy_support.vtk_to_numpy(polydata1.GetPoints().GetData())
+    points2 = numpy_support.vtk_to_numpy(polydata2.GetPoints().GetData())
+
+    if not is_polydata_valid(polydata1) or not is_polydata_valid(polydata2):
+        raise ValueError("Invalid input polydata.")
+
+    # Build KD-Trees for efficient nearest-neighbor search
+    tree1 = cKDTree(points1)
+    tree2 = cKDTree(points2)
+
+    # For each point in polydata1, find the distance to its nearest neighbor in polydata2
+    dists1, _ = tree2.query(points1)
+    # For each point in polydata2, find the distance to its nearest neighbor in polydata1
+    dists2, _ = tree1.query(points2)
+
+    # Compute Chamfer loss as the sum of the mean squared distances in both directions
+    loss = np.mean(dists1**2) + np.mean(dists2**2)
+    return loss

@@ -135,6 +135,9 @@ Verifies that a VTK polydata object is valid.
 - ```decimate_vtkpolydata(polydata: vtk.vtkPolyData, decimation_factor: float) -> vtk.vtkPolyData```
 Reduce the number of points in a VTK polydata object using the Quadric Decimation filter.
 
+- ```calculate_chamfer_distance_between_vtkpolydata(polydata1: vtk.vtkPolyData, polydata2: vtk.vtkPolyData) -> float```
+Calculate the Chamfer loss between 2 vtkPolyData objects.
+
 
 ## Dependencies
 - NumPy: Array computations.
