@@ -132,6 +132,10 @@ Plots a VTK PolyData object in 3D.
 - ```is_polydata_valid(polydata: vtk.vtkPolyData) -> bool```
 Verifies that a VTK polydata object is valid.
 
+- ```decimate_vtkpolydata(polydata: vtk.vtkPolyData, decimation_factor: float) -> vtk.vtkPolyData```
+Reduce the number of points in a VTK polydata object using the Quadric Decimation filter.
+
+
 ## Dependencies
 - NumPy: Array computations.
 - SimpleITK: Medical image processing.

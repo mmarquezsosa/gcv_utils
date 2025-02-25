@@ -723,3 +723,21 @@ def is_polydata_valid(polydata: vtk.vtkPolyData) -> bool:
         return False
 
     return True
+
+def decimate_vtkpolydata(polydata: vtk.vtkPolyData, decimation_factor: float) -> vtk.vtkPolyData:
+    """
+    Reduce the number of points in a VTK PolyData given a factor using the Quadric Decimation filter.
+    """
+    if not (0.0 <= decimation_factor < 1.0):
+        raise ValueError("Factor must be between 0.0 (no reduction) and 1.0 (nearly complete reduction).")
+    try:
+        decimation = vtk.vtkQuadricDecimation()
+        decimation.SetInputData(polydata)
+        decimation.SetTargetReduction(decimation_factor)
+        decimation.Update()
+        decimated_object = decimation.GetOutput()
+
+        return decimated_object
+    
+    except Exception as e:
+        print(f"Error decimating polydata: {e}")
