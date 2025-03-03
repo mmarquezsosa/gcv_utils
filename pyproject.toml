@@ -3,9 +3,8 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["src"]
-exclude = ["Examples"]
+where = ["src"]
+include = ["gcv_utils"]
 
 [project]
 name = "gcv_utils"
