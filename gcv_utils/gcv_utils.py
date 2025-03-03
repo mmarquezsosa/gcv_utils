@@ -219,8 +219,12 @@ def describe_image(image, image_name: str = "Image", verbose: bool = False):
     Returns the dimensions, spacing, and origin of an image.
     """
     try:
-        if isinstance(image, sitk.Image) or isinstance(image, vtk.vtkImageData):
+        if isinstance(image, sitk.Image):
             image_size = image.GetSize()
+            image_spacing = image.GetSpacing()
+            image_origin = image.GetOrigin()
+        elif isinstance(image, vtk.vtkImageData):
+            image_size = image.GetDimensions()
             image_spacing = image.GetSpacing()
             image_origin = image.GetOrigin()
         else:
@@ -745,7 +749,7 @@ def decimate_vtkpolydata(polydata: vtk.vtkPolyData, decimation_factor: float) ->
 
 def calculate_chamfer_distance_between_vtkpolydata(polydata1: vtk.vtkPolyData, polydata2: vtk.vtkPolyData) -> float:
     """
-    Calculate the Chamfer loss between 2 vtkPolyData objects.
+    Calculate the Chamfer distance between 2 vtkPolyData objects.
     """
     # Convert VTK point data to NumPy arrays
     points1 = numpy_support.vtk_to_numpy(polydata1.GetPoints().GetData())
@@ -766,3 +770,28 @@ def calculate_chamfer_distance_between_vtkpolydata(polydata1: vtk.vtkPolyData, p
     # Compute Chamfer loss as the sum of the mean squared distances in both directions
     loss = np.mean(dists1**2) + np.mean(dists2**2)
     return loss
+
+def calculate_hausdorff_distance_between_vtkpolydata(polydata1: vtk.vtkPolyData, polydata2: vtk.vtkPolyData) -> float:
+    """
+    Calculate the Hausdorff loss between 2 vtkPolyData objects.
+    """
+    # Convert VTK point data to NumPy arrays
+    points1 = numpy_support.vtk_to_numpy(polydata1.GetPoints().GetData())
+    points2 = numpy_support.vtk_to_numpy(polydata2.GetPoints().GetData())
+
+    if not is_polydata_valid(polydata1) or not is_polydata_valid(polydata2):
+        raise ValueError("Invalid input polydata.")
+
+    # Build KD-Trees for efficient nearest-neighbor search
+    tree1 = cKDTree(points1)
+    tree2 = cKDTree(points2)
+
+    # For each point in polydata1, find the distance to its nearest neighbor in polydata2
+    dists1, _ = tree2.query(points1)
+    # For each point in polydata2, find the distance to its nearest neighbor in polydata1
+    dists2, _ = tree1.query(points2)
+
+    # Compute Hausdorff distance as the maximum of the directed distances
+    hausdorff_distance = max(np.max(dists1), np.max(dists2))
+    
+    return hausdorff_distance
