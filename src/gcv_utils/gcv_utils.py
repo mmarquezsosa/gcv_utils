@@ -195,6 +195,63 @@ def resample_and_center_sitkimage(image: sitk.Image, output_size: tuple[float, f
 
     return final_image
 
+def separate_binary_image_largest_components(image_path: str, verbose: bool = False):
+    """
+    Loads a 3D binary image, labels connected components, and selects:
+      - The component with the smallest left edge along the x-axis ("left")
+      - The component with the largest right edge along the x-axis ("right")
+    In case of ties, the component with more voxels is selected.
+    """
+    # Load the image (assumes a valid image format and that read_sitkimage is defined)
+    binaryImage = read_sitkimage(image_path, verbose = verbose)
+
+    # Label connected components
+    labeled_image = sitk.ConnectedComponentImageFilter().Execute(binaryImage)
+
+    # Compute label statistics (including bounding boxes)
+    stats = sitk.LabelShapeStatisticsImageFilter()
+    stats.Execute(labeled_image)
+
+    labels = stats.GetLabels()
+    if not labels:
+        if verbose:
+            raise ("No connected components found.")
+        return None, None
+
+    # Precompute statistics for each label: (left_edge, right_edge, num_voxels)
+    label_stats = {}
+    for label in labels:
+        bbox = stats.GetBoundingBox(label)  # (x, y, z, size_x, size_y, size_z)
+        left_edge = bbox[0]
+        right_edge = bbox[0] + bbox[3] - 1  # rightmost x-coordinate
+        num_voxels = stats.GetNumberOfPixels(label)
+        label_stats[label] = (left_edge, right_edge, num_voxels)
+    
+    # Determine left candidate: minimize left_edge, break ties by maximizing num_voxels.
+    left_candidate = max(label_stats, key=lambda l: (label_stats[l][1], label_stats[l][2]))
+    # Determine right candidate: maximize right_edge, break ties by maximizing num_voxels.
+    right_candidate = min(label_stats, key=lambda l: (label_stats[l][0], -label_stats[l][2]))
+
+    # Create and save binary mask for the left candidate
+    left_mask = sitk.BinaryThreshold(labeled_image,
+                                     lowerThreshold=left_candidate,
+                                     upperThreshold=left_candidate,
+                                     insideValue=255,
+                                     outsideValue=0)
+    left_output_name = image_path[:-4] + "_Left.mhd"
+    write_sitkimage(image=sitk.Cast(left_mask, sitk.sitkInt16), image_path=left_output_name, verbose=verbose)
+
+    # Create and save binary mask for the right candidate
+    right_mask = sitk.BinaryThreshold(labeled_image,
+                                      lowerThreshold=right_candidate,
+                                      upperThreshold=right_candidate,
+                                      insideValue=255,
+                                      outsideValue=0)
+    right_output_name = image_path[:-4] + "_Right.mhd"
+    write_sitkimage(image=sitk.Cast(right_mask, sitk.sitkInt16), image_path=right_output_name, verbose=verbose)
+    
+    return left_candidate, right_candidate
+
 ############################ SITK & VTK IMAGES ############################
 
 def get_array_from_image(image) -> np.ndarray:
