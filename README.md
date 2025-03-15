@@ -1,5 +1,7 @@
 # Geometric Computer Vision Utilities (GCV Utils)
 
+![](Examples/gcv_utils.png)
+
 **GCV Utils** is a Python project for processing, manipulating, and visualizing geometric data in computer vision applications. It provides functionalities for handling 3D images and meshes, supporting **SimpleITK**, **VTK**, and **NumPy** data formats. 
 
 ## Table of Contents
