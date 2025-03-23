@@ -198,9 +198,8 @@ def resample_and_center_sitkimage(image: sitk.Image, output_size: tuple[float, f
 def separate_binary_image_largest_components(image_path: str, verbose: bool = False):
     """
     Loads a 3D binary image, labels connected components, and selects:
-      - The component with the smallest left edge along the x-axis ("left")
-      - The component with the largest right edge along the x-axis ("right")
-    In case of ties, the component with more voxels is selected.
+      - The component with the smallest left centroid along the x-axis ("left")
+      - The component with the largest right centroid along the x-axis ("right")
     """
     # Load the image (assumes a valid image format and that read_sitkimage is defined)
     binaryImage = read_sitkimage(image_path, verbose = verbose)
@@ -218,19 +217,27 @@ def separate_binary_image_largest_components(image_path: str, verbose: bool = Fa
             raise ("No connected components found.")
         return None, None
 
-    # Precompute statistics for each label: (left_edge, right_edge, num_voxels)
+    # Precompute statistics for each label: (num_voxels, centroid_x)
     label_stats = {}
     for label in labels:
-        bbox = stats.GetBoundingBox(label)  # (x, y, z, size_x, size_y, size_z)
-        left_edge = bbox[0]
-        right_edge = bbox[0] + bbox[3] - 1  # rightmost x-coordinate
+        centroid = stats.GetCentroid(label)  # (x, y, z)
         num_voxels = stats.GetNumberOfPixels(label)
-        label_stats[label] = (left_edge, right_edge, num_voxels)
-    
-    # Determine left candidate: minimize left_edge, break ties by maximizing num_voxels.
-    left_candidate = max(label_stats, key=lambda l: (label_stats[l][1], label_stats[l][2]))
-    # Determine right candidate: maximize right_edge, break ties by maximizing num_voxels.
-    right_candidate = min(label_stats, key=lambda l: (label_stats[l][0], -label_stats[l][2]))
+        label_stats[label] = (num_voxels, centroid[0])
+
+    # Sort labels by number of voxels (descending) and take top 2
+    top2_labels = sorted(label_stats.items(), key=lambda x: x[1][0], reverse=True)[:2]
+
+    # Extract labels and centroid_x
+    label1, (voxels1, cx1) = top2_labels[0]
+    label2, (voxels2, cx2) = top2_labels[1]
+
+    # Assign based on centroid_x
+    if cx1 < cx2:
+        right_candidate = label1
+        left_candidate = label2
+    else:
+        right_candidate = label2
+        left_candidate = label1
 
     # Create and save binary mask for the left candidate
     left_mask = sitk.BinaryThreshold(labeled_image,
