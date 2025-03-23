@@ -257,8 +257,6 @@ def separate_binary_image_largest_components(image_path: str, verbose: bool = Fa
     right_output_name = image_path[:-4] + "-Right.mhd"
     write_sitkimage(image=sitk.Cast(right_mask, sitk.sitkInt16), image_path=right_output_name, verbose=verbose)
     
-    return left_candidate, right_candidate
-
 ############################ SITK & VTK IMAGES ############################
 
 def get_array_from_image(image) -> np.ndarray:
