@@ -246,7 +246,7 @@ def separate_binary_image_largest_components(image_path: str, verbose: bool = Fa
                                      insideValue=255,
                                      outsideValue=0)
     left_output_name = image_path[:-4] + "-Left.mhd"
-    write_sitkimage(image=sitk.Cast(left_mask, sitk.sitkInt16), image_path=left_output_name, verbose=verbose)
+    #write_sitkimage(image=sitk.Cast(left_mask, sitk.sitkInt16), image_path=left_output_name, verbose=verbose)
 
     # Create and save binary mask for the right candidate
     right_mask = sitk.BinaryThreshold(labeled_image,
@@ -255,7 +255,7 @@ def separate_binary_image_largest_components(image_path: str, verbose: bool = Fa
                                       insideValue=255,
                                       outsideValue=0)
     right_output_name = image_path[:-4] + "-Right.mhd"
-    write_sitkimage(image=sitk.Cast(right_mask, sitk.sitkInt16), image_path=right_output_name, verbose=verbose)
+    #write_sitkimage(image=sitk.Cast(right_mask, sitk.sitkInt16), image_path=right_output_name, verbose=verbose)
     
     return sitk.Cast(right_mask, sitk.sitkInt16), sitk.Cast(left_mask, sitk.sitkInt16)
 
