@@ -308,43 +308,62 @@ def describe_image(image, image_name: str = "Image", verbose: bool = False):
     except Exception as e:
         print(f"Error describing image: {e}")
 
-def plot_3D_views(image, image_name: str = "Image", display: bool = False, 
+def plot_3D_views(image, image_name: str = "Image", display: bool = False,
                  save: bool = False, output_dir = None) -> None:
     """
-    Plots the mid-slice views (sagittal, coronal, and axial) of a 3D image.
+    Plots the mid slice views (sagittal, coronal, axial) of a 3D image
+    with correct physical aspect ratios based on image spacing.
     """
     image_array = get_array_from_image(image)
 
-    # Get array shape: expect (depth, height, width) for a 3D image.
-    num_slices, height, width = image_array.shape
+    # Array shape expected as (z, y, x)
+    nz, ny, nx = image_array.shape
 
-    # Determine the mid-slice index for each view.
-    axial_index = num_slices // 2      # Axial view (Z-axis slice)
-    coronal_index = height // 2          # Coronal view (Y-axis slice)
-    sagittal_index = width // 2          # Sagittal view (X-axis slice)
+    # Physical spacing from SimpleITK image
+    # SimpleITK spacing order is (x, y, z)
+    sx, sy, sz = image.GetSpacing()
 
-    # Extract the slices.
+    # Mid slice indices
+    axial_index = nz // 2
+    coronal_index = ny // 2
+    sagittal_index = nx // 2
+
+    # Extract slices
     axial = image_array[axial_index, :, :]
     coronal = image_array[:, coronal_index, :]
     sagittal = image_array[:, :, sagittal_index]
 
-    # Create subplots in the order: Sagittal, Coronal, Axial.
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-    # Plot the Sagittal view.
-    axes[0].imshow(sagittal, cmap='gray')
-    axes[0].set_title('Sagittal View (X-axis slice)')
-    axes[0].axis('off')
+    # Sagittal view (y, z plane)
+    axes[0].imshow(
+        sagittal.T,
+        cmap="gray",
+        origin="lower",
+        aspect=sy / sz
+    )
+    axes[0].set_title("Sagittal View")
+    axes[0].axis("off")
 
-    # Plot the Coronal view.
-    axes[1].imshow(coronal, cmap='gray')
-    axes[1].set_title('Coronal View (Y-axis slice)')
-    axes[1].axis('off')
+    # Coronal view (x, z plane)
+    axes[1].imshow(
+        coronal.T,
+        cmap="gray",
+        origin="lower",
+        aspect=sx / sz
+    )
+    axes[1].set_title("Coronal View")
+    axes[1].axis("off")
 
-    # Plot the Axial view.
-    axes[2].imshow(axial, cmap='gray')
-    axes[2].set_title('Axial View (Z-axis slice)')
-    axes[2].axis('off')
+    # Axial view (x, y plane)
+    axes[2].imshow(
+        axial,
+        cmap="gray",
+        origin="lower",
+        aspect=sx / sy
+    )
+    axes[2].set_title("Axial View")
+    axes[2].axis("off")
 
     fig.suptitle(image_name, fontsize=16)
     plt.tight_layout()
