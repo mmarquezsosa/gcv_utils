@@ -313,9 +313,9 @@ def plot_3D_views(image, image_name: str = "Image", display: bool = False,
     """ 
     Plots the mid-slice views (sagittal, coronal, and axial) of a 3D image. 
     """
-    volume = sitk.GetArrayFromImage(vol_sitk)
+    volume = sitk.GetArrayFromImage(image)
 
-    sx, sy, sz = vol_sitk.GetSpacing()
+    sx, sy, sz = image.GetSpacing()
 
     # Center slices
     z = volume.shape[0] // 2
