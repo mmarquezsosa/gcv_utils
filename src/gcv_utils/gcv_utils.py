@@ -313,51 +313,48 @@ def plot_3D_views(image, image_name: str = "Image", display: bool = False,
     """ 
     Plots the mid-slice views (sagittal, coronal, and axial) of a 3D image. 
     """
-    image_array = get_array_from_image(image)
+    volume = sitk.GetArrayFromImage(vol_sitk)
 
-    # Array shape assumed as (z, y, x)
-    nz, ny, nx = image_array.shape
+    sx, sy, sz = vol_sitk.GetSpacing()
 
-    # SimpleITK spacing order is (x, y, z)
-    sx, sy, sz = image.GetSpacing()
-
-    # Mid indices
-    z = nz // 2
-    y = ny // 2
-    x = nx // 2
+    # Center slices
+    z = volume.shape[0] // 2
+    y = volume.shape[1] // 2
+    x = volume.shape[2] // 2
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-    # Axial view (fix z, plane y x)
+
+    # Axial
     axes[0].imshow(
         volume[z, :, :],
         cmap="gray",
         origin="lower",
-        extent=[0, nx * sx, 0, ny * sy]
+        extent=[0, volume.shape[2] * sx, 0, volume.shape[1] * sy],
     )
-    axes[0].set_title(f"Axial (z={z})")
+    axes[0].set_title(f"Axial z={z}")
     axes[0].set_aspect("equal")
     axes[0].axis("off")
 
-    # Coronal view (fix y, plane z x)
+    # Coronal
     axes[1].imshow(
         volume[:, y, :],
         cmap="gray",
         origin="lower",
-        extent=[0, nx * sx, 0, nz * sz]
+        extent=[0, volume.shape[2] * sx, 0, volume.shape[0] * sz],
     )
-    axes[1].set_title(f"Coronal (y={y})")
+    axes[1].set_title(f"Coronal y={y}")
     axes[1].set_aspect("equal")
     axes[1].axis("off")
 
-    # Sagittal view (fix x, plane z y)
+    # Sagittal
     axes[2].imshow(
         volume[:, :, x],
         cmap="gray",
         origin="lower",
-        extent=[0, ny * sy, 0, nz * sz]
+        extent=[0, volume.shape[1] * sy, 0, volume.shape[0] * sz],
     )
-    axes[2].set_title(f"Sagittal (x={x})")
+    axes[2].set_title(f"Sagittal x={x}")
     axes[2].set_aspect("equal")
     axes[2].axis("off")
 
