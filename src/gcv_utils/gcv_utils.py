@@ -310,72 +310,68 @@ def describe_image(image, image_name: str = "Image", verbose: bool = False):
 
 def plot_3D_views(image, image_name: str = "Image", display: bool = False,
                  save: bool = False, output_dir = None) -> None:
-    """
-    Plots the mid slice views (sagittal, coronal, axial) of a 3D image
-    with correct physical aspect ratios based on image spacing.
+    """ 
+    Plots the mid-slice views (sagittal, coronal, and axial) of a 3D image. 
     """
     image_array = get_array_from_image(image)
 
-    # Array shape expected as (z, y, x)
+    # Array shape assumed as (z, y, x)
     nz, ny, nx = image_array.shape
 
-    # Physical spacing from SimpleITK image
     # SimpleITK spacing order is (x, y, z)
     sx, sy, sz = image.GetSpacing()
 
-    # Mid slice indices
-    axial_index = nz // 2
-    coronal_index = ny // 2
-    sagittal_index = nx // 2
-
-    # Extract slices
-    axial = image_array[axial_index, :, :]
-    coronal = image_array[:, coronal_index, :]
-    sagittal = image_array[:, :, sagittal_index]
+    # Mid indices
+    z = nz // 2
+    y = ny // 2
+    x = nx // 2
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-    # Sagittal view (y, z plane)
+    # Axial view (fix z, plane y x)
     axes[0].imshow(
-        sagittal.T,
+        volume[z, :, :],
         cmap="gray",
         origin="lower",
-        aspect=sy / sz
+        extent=[0, nx * sx, 0, ny * sy]
     )
-    axes[0].set_title("Sagittal View")
+    axes[0].set_title(f"Axial (z={z})")
+    axes[0].set_aspect("equal")
     axes[0].axis("off")
 
-    # Coronal view (x, z plane)
+    # Coronal view (fix y, plane z x)
     axes[1].imshow(
-        coronal.T,
+        volume[:, y, :],
         cmap="gray",
         origin="lower",
-        aspect=sx / sz
+        extent=[0, nx * sx, 0, nz * sz]
     )
-    axes[1].set_title("Coronal View")
+    axes[1].set_title(f"Coronal (y={y})")
+    axes[1].set_aspect("equal")
     axes[1].axis("off")
 
-    # Axial view (x, y plane)
+    # Sagittal view (fix x, plane z y)
     axes[2].imshow(
-        axial,
+        volume[:, :, x],
         cmap="gray",
         origin="lower",
-        aspect=sx / sy
+        extent=[0, ny * sy, 0, nz * sz]
     )
-    axes[2].set_title("Axial View")
+    axes[2].set_title(f"Sagittal (x={x})")
+    axes[2].set_aspect("equal")
     axes[2].axis("off")
 
-    fig.suptitle(image_name, fontsize=16)
+    plt.suptitle(image_name)
     plt.tight_layout()
-    plt.subplots_adjust(top=0.85)
+    plt.subplots_adjust(top=0.88)
 
     if save:
         if output_dir is None:
             output_dir = os.getcwd()
-        file_path = os.path.join(output_dir, f"{image_name}.png")
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        plt.savefig(file_path)
-        print(f"Plot saved to: {file_path}")
+        os.makedirs(output_dir, exist_ok=True)
+        path = os.path.join(output_dir, f"{image_name}.png")
+        plt.savefig(path)
+        print(f"Plot saved to {path}")
 
     if display:
         plt.show()
