@@ -329,7 +329,7 @@ def plot_3D_views(image, image_name: str = "Image", display: bool = False,
     axes[0].imshow(
         volume[z, :, :],
         cmap="gray",
-        origin="lower",
+        origin="upper",
         extent=[0, volume.shape[2] * sx, 0, volume.shape[1] * sy],
     )
     axes[0].set_title(f"Axial z={z}")
@@ -374,6 +374,8 @@ def plot_3D_views(image, image_name: str = "Image", display: bool = False,
         plt.show()
     else:
         plt.close()
+
+    return fig
 
 ############################ VTK IMAGES ############################
 
