@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from vtk.util import numpy_support
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.spatial import cKDTree
+import matplotlib.colors as mcolors
 
 ############################ SITK IMAGES ############################
 
@@ -309,7 +310,7 @@ def describe_image(image, image_name: str = "Image", verbose: bool = False):
         print(f"Error describing image: {e}")
 
 def plot_3D_views(image, image_name: str = "Image", display: bool = False,
-                 save: bool = False, output_dir = None) -> None:
+                 save: bool = False, output_dir = None):
     """ 
     Plots the mid-slice views (sagittal, coronal, and axial) of a 3D image. 
     """
@@ -368,6 +369,198 @@ def plot_3D_views(image, image_name: str = "Image", display: bool = False,
         os.makedirs(output_dir, exist_ok=True)
         path = os.path.join(output_dir, f"{image_name}.png")
         plt.savefig(path)
+        print(f"Plot saved to {path}")
+
+    if display:
+        plt.show()
+    else:
+        plt.close()
+
+    return fig
+
+def plot_3D_views_with_mask(image, mask=None,
+                            image_name: str = "Image",
+                            display: bool = False, save: bool = False, output_dir=None,
+                            alpha: float = 0.4,
+                            label_colors: dict = None, label_names: dict = None):
+    """
+    Plots the mid-slice views (axial, coronal, sagittal) of a 3D image.
+    Optionally overlays a multi-label mask with different colors per label.
+    """
+
+    volume = sitk.GetArrayFromImage(image)
+
+    if mask is not None:
+        mask_volume = sitk.GetArrayFromImage(mask)
+
+        if mask_volume.shape != volume.shape:
+            raise ValueError("Mask and image must have the same shape.")
+
+    sx, sy, sz = image.GetSpacing()
+
+    # Center slices
+    z = volume.shape[0] // 2
+    y = volume.shape[1] // 2
+    x = volume.shape[2] // 2
+
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+    # Default colors
+    if label_colors is None:
+        label_colors = {
+            1: "red",
+            2: "lime",
+            3: "blue",
+            4: "yellow",
+            5: "magenta",
+            6: "cyan",
+            7: "orange",
+            8: "purple",
+            9: "brown",
+            10: "pink"
+        }
+
+    # Default label names
+    if label_names is None:
+        label_names = {
+            label: f"Label {label}"
+            for label in label_colors.keys()
+        }
+
+    # Create colormap
+    max_label = max(label_colors.keys()) if label_colors else 1
+
+    cmap_colors = ["black"] * (max_label + 1)
+
+    for label, color in label_colors.items():
+        cmap_colors[label] = color
+
+    cmap = mcolors.ListedColormap(cmap_colors)
+
+    axes[0].imshow(
+        volume[z, :, :],
+        cmap="gray",
+        origin="upper",
+        extent=[0, volume.shape[2] * sx, 0, volume.shape[1] * sy],
+    )
+
+    if mask is not None:
+        masked_axial = np.ma.masked_where(
+            mask_volume[z, :, :] == 0,
+            mask_volume[z, :, :]
+        )
+
+        axes[0].imshow(
+            masked_axial,
+            cmap=cmap,
+            alpha=alpha,
+            origin="upper",
+            extent=[0, volume.shape[2] * sx, 0, volume.shape[1] * sy],
+            interpolation="nearest",
+        )
+
+    axes[0].set_title(f"Axial z={z}")
+    axes[0].set_aspect("equal")
+    axes[0].axis("off")
+
+    axes[1].imshow(
+        volume[:, y, :],
+        cmap="gray",
+        origin="lower",
+        extent=[0, volume.shape[2] * sx, 0, volume.shape[0] * sz],
+    )
+
+    if mask is not None:
+        masked_coronal = np.ma.masked_where(
+            mask_volume[:, y, :] == 0,
+            mask_volume[:, y, :]
+        )
+
+        axes[1].imshow(
+            masked_coronal,
+            cmap=cmap,
+            alpha=alpha,
+            origin="lower",
+            extent=[0, volume.shape[2] * sx, 0, volume.shape[0] * sz],
+            interpolation="nearest",
+        )
+
+    axes[1].set_title(f"Coronal y={y}")
+    axes[1].set_aspect("equal")
+    axes[1].axis("off")
+
+    axes[2].imshow(
+        volume[:, :, x],
+        cmap="gray",
+        origin="lower",
+        extent=[0, volume.shape[1] * sy, 0, volume.shape[0] * sz],
+    )
+
+    if mask is not None:
+        masked_sagittal = np.ma.masked_where(
+            mask_volume[:, :, x] == 0,
+            mask_volume[:, :, x]
+        )
+
+        axes[2].imshow(
+            masked_sagittal,
+            cmap=cmap,
+            alpha=alpha,
+            origin="lower",
+            extent=[0, volume.shape[1] * sy, 0, volume.shape[0] * sz],
+            interpolation="nearest",
+        )
+
+    axes[2].set_title(f"Sagittal x={x}")
+    axes[2].set_aspect("equal")
+    axes[2].axis("off")
+
+    if mask is not None:
+
+        present_labels = np.unique(mask_volume)
+        present_labels = present_labels[present_labels != 0]
+
+        handles = []
+
+        for label in present_labels:
+
+            color = label_colors.get(label, "white")
+            name = label_names.get(label, f"Label {label}")
+
+            handles.append(
+                plt.Line2D(
+                    [0],
+                    [0],
+                    marker="s",
+                    color="w",
+                    markerfacecolor=color,
+                    markersize=10,
+                    label=name,
+                )
+            )
+
+        fig.legend(
+            handles=handles,
+            loc="lower center",
+            ncol=min(len(handles), 8),
+            bbox_to_anchor=(0.5, -0.02),
+        )
+
+    plt.suptitle(image_name)
+
+    plt.tight_layout()
+    plt.subplots_adjust(top=0.88)
+
+    if save:
+        if output_dir is None:
+            output_dir = os.getcwd()
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        path = os.path.join(output_dir, f"{image_name}.png")
+
+        plt.savefig(path, bbox_inches="tight")
+
         print(f"Plot saved to {path}")
 
     if display:
